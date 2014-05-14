@@ -30,7 +30,7 @@ class Google(Router):
         # Google wants lat / lon
         return '{0.y},{0.x}'.format(p)
 
-    def route(self, origin, destination, waypoints=None, **kwargs):
+    def raw_query(self, origin, destination, waypoints=None, **kwargs):
         # This assumes you're not running Python on a device with a location
         # sensor.
         payload = {'origin': self._convert_coordinate(origin),
@@ -44,9 +44,9 @@ class Google(Router):
         r = requests.get(self.url, params=payload)
         r.raise_for_status()
 
-        return self._handle_output(r.json())
+        return r.json()
 
-    def _handle_output(self, data):
+    def format_output(self, data):
         features = []
         for r in data['routes']:
             # For now, just use the 'overview_polyline'.
@@ -76,7 +76,7 @@ class Mapquest(Router):
             return {'latLng': {'lat': location[1], 'lng': location[0]},
                     'type': t}
 
-    def route(self, origin, destination, waypoints=None, **kwargs):
+    def raw_query(self, origin, destination, waypoints=None, **kwargs):
         params = {
             'key': self.key,
             'inFormat': 'json',
@@ -110,9 +110,9 @@ class Mapquest(Router):
         if status_code != 0:
             raise Exception(data['info']['messages'][0])
 
-        return self._handle_output(data)
+        return data
 
-    def _handle_output(self, data):
+    def format_output(self, data):
         latlons = polycomp.decompress(data['route']['shape']['shapePoints'])
         coords = [tuple(reversed(c)) for c in latlons]
         duration = data['route']['time']
@@ -137,7 +137,7 @@ class Mapbox(Router):
     def _convert_coordinate(self, p):
         return '{0.x},{0.y}'.format(p)
 
-    def route(self, origin, destination, waypoints=None, **kwargs):
+    def raw_query(self, origin, destination, waypoints=None, **kwargs):
         baseurl = 'http://api.tiles.mapbox.com/v3/{mapid}/directions/driving/{waypoints}.json'
         if waypoints is None:
             waypoints = []
@@ -150,9 +150,9 @@ class Mapbox(Router):
         r = requests.get(url, params=payload)
 
         r.raise_for_status()
-        return self._handle_output(r.json())
+        return r.json()
 
-    def _handle_output(self, data):
+    def format_output(self, data):
         features = [self.route_to_feature(r['geometry']['coordinates'],
                                           r['distance'],
                                           r['duration'])

@@ -20,5 +20,13 @@ class Router:
         return {'type' : 'FeatureCollection',
                 'features' : features}
 
-    def route(self, origin, destination, waypoints=None, **kwargs):
+    def raw_query(self, origin, destination, waypoints=None, **kwargs):
         return NotImplementedError()
+
+    def format_output(self, data):
+        return NotImplementedError()
+
+    def route(self, origin, destination, waypoints=None, **kwargs):
+        data = self.raw_query(origin, destination, waypoints, **kwargs)
+        return self.format_output(data)
+
