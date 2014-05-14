@@ -28,15 +28,18 @@ class Google(Router):
         if isinstance(p, basestring):
             return p
         # Google wants lat / lon
-        return '{0.y},{0.x}'.format(p)
+        return '{0[1]},{0[0]}'.format(p)
 
-    def raw_query(self, origin, destination, waypoints=None, **kwargs):
+    def raw_query(self, waypoints, **kwargs):
+        origin = waypoints[0]
+        destination = waypoints[-1]
+        vias = waypoints[1:-1]
         # This assumes you're not running Python on a device with a location
         # sensor.
         payload = {'origin': self._convert_coordinate(origin),
                    'destination': self._convert_coordinate(destination),
                    'sensor': 'false'}
-        if waypoints:
+        if vias:
             payload['waypoints'] = '|'.join(self._convert_coordinate(wp)
                                             for wp in waypoints)
         payload.update(kwargs)
@@ -76,7 +79,7 @@ class Mapquest(Router):
             return {'latLng': {'lat': location[1], 'lng': location[0]},
                     'type': t}
 
-    def raw_query(self, origin, destination, waypoints=None, **kwargs):
+    def raw_query(self, waypoints, **kwargs):
         params = {
             'key': self.key,
             'inFormat': 'json',
@@ -84,11 +87,11 @@ class Mapquest(Router):
         }
 
         # Mapquest takes in locations as an array
-        locations = [self._convert_location(origin)]
+        locations = [self._convert_location(waypoints[0])]
         if waypoints:
             locations.extend(self._convert_location(loc, 'v')
-                             for loc in waypoints)
-        locations.append(self._convert_location(destination))
+                             for loc in waypoints[1:-1])
+        locations.append(self._convert_location(waypoints[-1]))
 
         data = {
             'locations': locations,
@@ -135,15 +138,12 @@ class Mapbox(Router):
         self.mapid = mapid
 
     def _convert_coordinate(self, p):
-        return '{0.x},{0.y}'.format(p)
+        return '{0[0]},{0[1]}'.format(p)
 
-    def raw_query(self, origin, destination, waypoints=None, **kwargs):
+    def raw_query(self, waypoints, **kwargs):
         baseurl = 'http://api.tiles.mapbox.com/v3/{mapid}/directions/driving/{waypoints}.json'
-        if waypoints is None:
-            waypoints = []
-        points = [origin] + waypoints + [destination]
         formatted_points = ';'.join(self._convert_coordinate(p)
-                                    for p in points)
+                                    for p in waypoints)
 
         url = baseurl.format(mapid=self.mapid, waypoints=formatted_points)
         payload = {'alternatives': 'false'}
