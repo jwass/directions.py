@@ -26,7 +26,7 @@ class Router:
     def format_output(self, data):
         return NotImplementedError()
 
-    def route(self, arg, destination=None, waypoints=None, **kwargs):
+    def route(self, arg, destination=None, waypoints=None, raw=False, **kwargs):
         # If destination is None, then arg is all the waypoints
         if destination is None:
             # waypoints must be None
@@ -44,6 +44,8 @@ class Router:
             raise ValueError('You must specify at least 2 points')
 
         data = self.raw_query(points, **kwargs)
+        if raw:
+            return data
         return self.format_output(data)
 
 def _waypoints(waypoints):
