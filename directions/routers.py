@@ -38,7 +38,8 @@ class Google(Router):
         # sensor.
         payload = {'origin': self._convert_coordinate(origin),
                    'destination': self._convert_coordinate(destination),
-                   'sensor': 'false'}
+                   'sensor': 'false',
+                   'units': 'metric'}
         if vias:
             payload['waypoints'] = '|'.join(self._convert_coordinate(wp)
                                             for wp in waypoints)
