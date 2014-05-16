@@ -73,7 +73,7 @@ routes = mq.route(line.coords[0], 'south station boston, ma',
 
 Other Tools
 -----------
-[geojsonio.py](http://github.com/jwass/geojsonio.py) can be used to quickly display the route on a map.
+[geojsonio.py](http://github.com/jwass/geojsonio.py) can be used to quickly display the route on a map. Note that it is against Google's ToS to do this with any of their routes.
 ```
 routes = mq.route(...)
 geojsonio.display(routes)
