@@ -17,7 +17,7 @@ import json
 import polycomp
 import requests
 
-from base import Router
+from base import Router, Route
 
 
 class Google(Router):
@@ -51,7 +51,7 @@ class Google(Router):
         return r.json()
 
     def format_output(self, data):
-        features = []
+        routes = []
         for r in data['routes']:
             # For now, just use the 'overview_polyline'.
             # TODO: Use the higher res leg polylines
@@ -60,10 +60,10 @@ class Google(Router):
             coords = [tuple(reversed(c)) for c in latlons]
             duration = sum(leg['duration']['value'] for leg in r['legs'])
             distance = sum(leg['distance']['value'] for leg in r['legs'])
-            f = self.route_to_feature(coords, distance, duration)
-            features.append(f)
+            r = Route(coords, distance, duration)
+            routes.append(r)
 
-        return self.feature_collection(features)
+        return routes
 
 
 class Mapquest(Router):
@@ -121,9 +121,9 @@ class Mapquest(Router):
         coords = [tuple(reversed(c)) for c in latlons]
         duration = data['route']['time']
         distance = data['route']['distance'] * 1000  # km to m
-        feature = self.route_to_feature(coords, distance, duration)
+        r = Route(coords, distance, duration)
 
-        return self.feature_collection([feature])
+        return [r]
 
 
 class MapquestOpen(Mapquest):
@@ -154,8 +154,8 @@ class Mapbox(Router):
         return r.json()
 
     def format_output(self, data):
-        features = [self.route_to_feature(r['geometry']['coordinates'],
-                                          r['distance'],
-                                          r['duration'])
-                    for r in data['routes']]
-        return self.feature_collection(features)
+        routes = [Route(r['geometry']['coordinates'],
+                        r['distance'],
+                        r['duration'])
+                  for r in data['routes']]
+        return routes

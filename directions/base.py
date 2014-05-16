@@ -1,25 +1,4 @@
 class Router:
-    def route_to_feature(self, coords, distance, duration, **kwargs):
-        """
-        Turn a route into a GeoJSON feature.
-
-        """
-        geom = {'type': 'LineString',
-                'coordinates': coords}
-        props = kwargs.copy()
-        props.update({'distance' : distance,
-                      'duration' : duration})
-
-        f = {'type': 'Feature',
-             'geometry': geom,
-             'properties': props}
-
-        return f
-
-    def feature_collection(self, features):
-        return {'type' : 'FeatureCollection',
-                'features' : features}
-
     def raw_query(self, waypoints, **kwargs):
         return NotImplementedError()
 
@@ -48,6 +27,7 @@ class Router:
             return data
         return self.format_output(data)
 
+
 def _waypoints(waypoints):
     if hasattr(waypoints, 'coords'):
         waypoints = waypoints.coords
@@ -69,3 +49,40 @@ def _waypoints(waypoints):
         points.append(p)
 
     return points
+
+
+class Route:
+    def __init__(self, coords, distance, duration, **kwargs):
+        """
+        Simple class to represent a single returned route
+
+        Parameters
+        ----------
+        coords : sequence of (lon, lat) coordinates
+        distance : length in meters of the route
+        duration : estimated duration of the route in seconds
+        kwargs : additional properties when converting to geojson
+
+        """
+        self.coords = coords
+        self.distance = distance
+        self.duration = duration
+        self.props = kwargs.copy()
+
+    @property
+    def __geo_interface__(self):
+        geom = {'type': 'LineString',
+                'coordinates': self.coords}
+        props = self.props.copy()
+        props.update({'distance': self.distance,
+                      'duration': self.duration})
+
+        f = {'type': 'Feature',
+             'geometry': geom,
+             'properties': props}
+
+        return f
+
+    def geojson(self):
+        return {'type': 'FeatureCollection',
+                'features': [self.__geo_interface__]}
