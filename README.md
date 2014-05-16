@@ -6,7 +6,7 @@ Please consult the terms of service of each provider before using them.
 - Google - https://developers.google.com/maps/terms
 - Mapquest - Contact for licensed data agreement
 - Mapquest Open - http://developer.mapquest.com/web/info/terms-of-use
-- Mapbox - https://www.mapbox.com/tos/
+- Mapbox - (Directions API still in preview and subject to change) https://www.mapbox.com/tos/
 
 Usage
 -----
