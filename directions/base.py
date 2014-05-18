@@ -56,19 +56,7 @@ class Router:
                           waypoints=[(-71.103972, 42.349324)])
 
         """
-        # If destination is None, then arg is all the waypoints
-        if destination is None:
-            # waypoints must be None
-            if waypoints is not None:
-                raise ValueError('Cannot specify waypoints without destination')
-            p = arg
-        else:  # arg is origin
-            if waypoints is None:
-                p = [arg, destination]
-            else:
-                p = [arg] + waypoints + [destination]
-
-        points = _waypoints(p)
+        points = _parse_points(arg, destination, waypoints)
         if len(points) < 2:
             raise ValueError('You must specify at least 2 points')
 
@@ -76,6 +64,23 @@ class Router:
         if raw:
             return data
         return self.format_output(data)
+
+
+def _parse_points(arg, destination=None, waypoints=None):
+    # If destination is None, then arg is all the waypoints
+    if destination is None:
+        # waypoints must be None
+        if waypoints is not None:
+            raise ValueError('Cannot specify waypoints without destination')
+        p = arg
+    else:  # arg is origin
+        if waypoints is None:
+            p = [arg, destination]
+        else:
+            p = [arg] + waypoints + [destination]
+
+    points = _waypoints(p)
+    return points
 
 
 def _waypoints(waypoints):
