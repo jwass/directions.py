@@ -107,7 +107,7 @@ def _waypoints(waypoints):
 
 
 class Route:
-    def __init__(self, coords, distance, duration, **kwargs):
+    def __init__(self, coords, distance, duration, maneuvers=None, **kwargs):
         """
         Simple class to represent a single returned route
 
@@ -124,6 +124,10 @@ class Route:
         self.duration = duration
         self.props = kwargs.copy()
 
+        if maneuvers is None:
+            maneuvers = []
+        self.maneuvers = maneuvers
+
     @property
     def __geo_interface__(self):
         geom = {'type': 'LineString',
@@ -138,6 +142,34 @@ class Route:
 
         return f
 
-    def geojson(self):
+    def geojson(self, include_maneuvers=True):
+        if include_maneuvers:
+            features = [self] + self.maneuvers
+        else:
+            features = [self]
+
         return {'type': 'FeatureCollection',
-                'features': [self.__geo_interface__]}
+                'features': [f.__geo_interface__ for f in features]}
+
+
+class Maneuver:
+    def __init__(self, coords, **kwargs):
+        """
+        Simple class to represent a maneuver.
+
+        Todo: Add some remaining fields like maneuver text, type, etc.
+
+        """
+        self.coords = coords
+        self.props = kwargs.copy()
+
+    @property
+    def __geo_interface__(self):
+        geom = {'type': 'Point',
+                'coordinates': self.coords}
+
+        f = {'type': 'Feature',
+             'geometry': geom,
+             'properties': self.props}
+
+        return f

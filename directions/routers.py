@@ -17,7 +17,7 @@ import json
 import polycomp
 import requests
 
-from base import Router, Route
+from base import Router, Route, Maneuver
 
 
 class Google(Router):
@@ -60,14 +60,24 @@ class Google(Router):
             coords = [tuple(reversed(c)) for c in latlons]
             duration = sum(leg['duration']['value'] for leg in r['legs'])
             distance = sum(leg['distance']['value'] for leg in r['legs'])
-            r = Route(coords, distance, duration)
-            routes.append(r)
+
+            maneuvers = []
+            # Legs are the spans of the route between waypoints desired. If
+            # there are no waypoints, there will only be 1 leg
+            for leg in r['legs']:
+                for step in leg['steps']:
+                    loc = step['start_location']
+                    m = Maneuver((loc['lng'], loc['lat']),
+                                 text=step['html_instructions'])
+                    maneuvers.append(m)
+            route = Route(coords, distance, duration, maneuvers=maneuvers)
+            routes.append(route)
 
         return routes
 
 
 class Mapquest(Router):
-    # http://www.mapquestapi.com/directions/ 
+    # http://www.mapquestapi.com/directions/
     url = 'http://www.mapquestapi.com/directions/v2/route'
 
     def __init__(self, key):
@@ -121,7 +131,15 @@ class Mapquest(Router):
         coords = [tuple(reversed(c)) for c in latlons]
         duration = data['route']['time']
         distance = data['route']['distance'] * 1000  # km to m
-        r = Route(coords, distance, duration)
+
+        maneuvers = []
+        for leg in data['route']['legs']:
+            for m_in in leg['maneuvers']:
+                loc = m_in['startPoint']
+                m = Maneuver((loc['lng'], loc['lat']),
+                             text=m_in['narrative'])
+                maneuvers.append(m)
+        r = Route(coords, distance, duration, maneuvers=maneuvers)
 
         return [r]
 
@@ -154,8 +172,13 @@ class Mapbox(Router):
         return r.json()
 
     def format_output(self, data):
-        routes = [Route(r['geometry']['coordinates'],
-                        r['distance'],
-                        r['duration'])
-                  for r in data['routes']]
+        routes = []
+        for r in data['routes']:
+            maneuvers = [Maneuver(s['maneuver']['location']['coordinates'],
+                                  text=s['maneuver']['instruction'])
+                         for s in r['steps']]
+            route = Route(r['geometry']['coordinates'],
+                          r['distance'],
+                          r['duration'], maneuvers=maneuvers)
+            routes.append(route)
         return routes
