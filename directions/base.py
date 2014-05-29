@@ -122,7 +122,7 @@ class Route:
         self.coords = coords
         self.distance = distance
         self.duration = duration
-        self.props = kwargs.copy()
+        self.properties = kwargs.copy()
 
         if maneuvers is None:
             maneuvers = []
@@ -132,13 +132,13 @@ class Route:
     def __geo_interface__(self):
         geom = {'type': 'LineString',
                 'coordinates': self.coords}
-        props = self.props.copy()
-        props.update({'distance': self.distance,
-                      'duration': self.duration})
+        properties = self.properties.copy()
+        properties.update({'distance': self.distance,
+                           'duration': self.duration})
 
         f = {'type': 'Feature',
              'geometry': geom,
-             'properties': props}
+             'properties': properties}
 
         return f
 
@@ -161,7 +161,7 @@ class Maneuver:
 
         """
         self.coords = coords
-        self.props = kwargs.copy()
+        self.properties = kwargs.copy()
 
     @property
     def __geo_interface__(self):
@@ -170,6 +170,6 @@ class Maneuver:
 
         f = {'type': 'Feature',
              'geometry': geom,
-             'properties': self.props}
+             'properties': self.properties}
 
         return f
