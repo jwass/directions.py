@@ -23,6 +23,9 @@ from base import Router, Route, Maneuver
 class Google(Router):
     url = 'http://maps.googleapis.com/maps/api/directions/json'
 
+    def __init__(self, *args, **kwargs):
+        Router.__init__(self, *args, **kwargs)
+
     # https://developers.google.com/maps/documentation/directions/
     def _convert_coordinate(self, p):
         if isinstance(p, basestring):
@@ -80,7 +83,8 @@ class Mapquest(Router):
     # http://www.mapquestapi.com/directions/
     url = 'http://www.mapquestapi.com/directions/v2/route'
 
-    def __init__(self, key):
+    def __init__(self, key, *args, **kwargs):
+        Router.__init__(self, *args, **kwargs)
         self.key = key
 
     def _convert_location(self, location, t='s'):
@@ -153,7 +157,8 @@ class MapquestOpen(Mapquest):
 
 class Mapbox(Router):
     # https://www.mapbox.com/developers/api/directions/
-    def __init__(self, mapid):
+    def __init__(self, mapid, *args, **kwargs):
+        Router.__init__(self, *args, **kwargs)
         self.mapid = mapid
 
     def _convert_coordinate(self, p):

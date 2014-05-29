@@ -1,6 +1,28 @@
+import time
+
 class Router:
+    def __init__(self, rate_limit_dt=0):
+        # The min time delta in seconds between queries
+        self._rate_limit_dt = rate_limit_dt
+
+        # The time of the last query, None if it hasn't been hit yet
+        self._last_query = None
+
     def raw_query(self, waypoints, **kwargs):
         return NotImplementedError()
+
+    def rate_limit_wait(self):
+        """
+        Sleep if rate limiting is required based on current time and last
+        query.
+
+        """
+        if self._rate_limit_dt and self._last_query is not None:
+            dt = time.time() - self._last_query
+            wait = self._rate_limit_dt - dt
+            if wait > 0:
+                time.sleep(wait)
+        
 
     def format_output(self, data):
         return NotImplementedError()
@@ -60,7 +82,10 @@ class Router:
         if len(points) < 2:
             raise ValueError('You must specify at least 2 points')
 
+        self.rate_limit_wait()
         data = self.raw_query(points, **kwargs)
+        self._last_query = time.time()
+
         if raw:
             return data
         return self.format_output(data)
