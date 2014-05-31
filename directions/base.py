@@ -1,5 +1,9 @@
 import time
 
+class Waypoint:
+    VIA = 1
+    STOP = 2
+
 class Router:
     def __init__(self, rate_limit_dt=0):
         # The min time delta in seconds between queries

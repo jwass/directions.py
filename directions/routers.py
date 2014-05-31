@@ -17,7 +17,7 @@ import json
 import polycomp
 import requests
 
-from base import Router, Route, Maneuver
+from base import Router, Route, Maneuver, Waypoint
 
 
 class Google(Router):
@@ -27,25 +27,34 @@ class Google(Router):
         Router.__init__(self, *args, **kwargs)
 
     # https://developers.google.com/maps/documentation/directions/
-    def _convert_coordinate(self, p):
+    def _convert_coordinate(self, p, t=Waypoint.VIA):
         if isinstance(p, basestring):
             return p
-        # Google wants lat / lon
-        return '{0[1]},{0[0]}'.format(p)
+        if t == Waypoint.VIA:
+            via = 'via:'
+        else:
+            via = ''
 
-    def raw_query(self, waypoints, **kwargs):
+        # Google wants lat / lon
+        return '{via}{0[1]:.6f},{0[0]:.6f}'.format(p, via=via)
+
+    def _query_params(self, waypoints):
         origin = waypoints[0]
         destination = waypoints[-1]
         vias = waypoints[1:-1]
         # This assumes you're not running Python on a device with a location
         # sensor.
-        payload = {'origin': self._convert_coordinate(origin),
-                   'destination': self._convert_coordinate(destination),
+        payload = {'origin': self._convert_coordinate(origin, t=None),
+                   'destination': self._convert_coordinate(destination, t=None),
                    'sensor': 'false',
                    'units': 'metric'}
         if vias:
-            payload['waypoints'] = '|'.join(self._convert_coordinate(wp)
-                                            for wp in waypoints)
+            payload['waypoints'] = '|'.join(self._convert_coordinate(v)
+                                            for v in vias)
+        return payload
+
+    def raw_query(self, waypoints, **kwargs):
+        payload = self._query_params(waypoints)
         payload.update(kwargs)
 
         r = requests.get(self.url, params=payload)
@@ -87,12 +96,26 @@ class Mapquest(Router):
         Router.__init__(self, *args, **kwargs)
         self.key = key
 
-    def _convert_location(self, location, t='s'):
+    def _convert_location(self, location, t=Waypoint.VIA):
+        if t == Waypoint.VIA:
+            via = 'v'
+        else:
+            via = 's'
         if isinstance(location, basestring):
-            return {'street': location, 'type': t}
+            return {'street': location, 'type': via}
         else:
             return {'latLng': {'lat': location[1], 'lng': location[0]},
-                    'type': t}
+                    'type': via}
+
+    def _format_waypoints(self, waypoints):
+        # Mapquest takes in locations as an array
+        locations = [self._convert_location(waypoints[0], t=Waypoint.STOP)]
+        if waypoints:
+            locations.extend(self._convert_location(loc, t=Waypoint.VIA)
+                             for loc in waypoints[1:-1])
+        locations.append(self._convert_location(waypoints[-1], t=Waypoint.STOP))
+
+        return locations
 
     def raw_query(self, waypoints, **kwargs):
         params = {
@@ -101,13 +124,7 @@ class Mapquest(Router):
             'outFormat': 'json',
         }
 
-        # Mapquest takes in locations as an array
-        locations = [self._convert_location(waypoints[0])]
-        if waypoints:
-            locations.extend(self._convert_location(loc, 'v')
-                             for loc in waypoints[1:-1])
-        locations.append(self._convert_location(waypoints[-1]))
-
+        locations = self._format_waypoints(waypoints)
         data = {
             'locations': locations,
             'options': {
