@@ -12,6 +12,7 @@ Mapquest Open - http://developer.mapquest.com/web/info/terms-of-use
 Mapbox - https://www.mapbox.com/tos/
 
 """
+import itertools
 import json
 
 import polycomp
@@ -44,10 +45,12 @@ class Google(Router):
         vias = waypoints[1:-1]
         # This assumes you're not running Python on a device with a location
         # sensor.
-        payload = {'origin': self._convert_coordinate(origin, t=None),
-                   'destination': self._convert_coordinate(destination, t=None),
-                   'sensor': 'false',
-                   'units': 'metric'}
+        payload = {
+            'origin': self._convert_coordinate(origin, t=None),
+            'destination': self._convert_coordinate(destination, t=None),
+            'sensor': 'false',
+            'units': 'metric',
+        }
         if vias:
             payload['waypoints'] = '|'.join(self._convert_coordinate(v)
                                             for v in vias)
@@ -65,15 +68,11 @@ class Google(Router):
     def format_output(self, data):
         routes = []
         for r in data['routes']:
-            # For now, just use the 'overview_polyline'.
-            # TODO: Use the higher res leg polylines
-            latlons = polycomp.decompress(r['overview_polyline']['points'])
-            # Reverse lat/lon to be lon/lat for GeoJSON
-            coords = [tuple(reversed(c)) for c in latlons]
             duration = sum(leg['duration']['value'] for leg in r['legs'])
             distance = sum(leg['distance']['value'] for leg in r['legs'])
 
             maneuvers = []
+            latlons = []
             # Legs are the spans of the route between waypoints desired. If
             # there are no waypoints, there will only be 1 leg
             for leg in r['legs']:
@@ -82,6 +81,19 @@ class Google(Router):
                     m = Maneuver((loc['lng'], loc['lat']),
                                  text=step['html_instructions'])
                     maneuvers.append(m)
+                    latlons.append(
+                        polycomp.decompress(step['polyline']['points']))
+
+            # latlons is a list of list of lat/lon coordinate pairs. The end
+            # point of each list is the same as the first point of the next
+            # list. Get rid of the duplicates
+            lines = [x[:-1] for x in latlons]
+            lines.append([latlons[-1][-1]])  # Add the very last point
+            points = itertools.chain(*lines)
+
+            # Reverse lat/lon to be lon/lat for GeoJSON
+            coords = [tuple(reversed(c)) for c in points]
+
             route = Route(coords, distance, duration, maneuvers=maneuvers)
             routes.append(route)
 
@@ -113,7 +125,8 @@ class Mapquest(Router):
         if waypoints:
             locations.extend(self._convert_location(loc, t=Waypoint.VIA)
                              for loc in waypoints[1:-1])
-        locations.append(self._convert_location(waypoints[-1], t=Waypoint.STOP))
+        locations.append(self._convert_location(waypoints[-1],
+                                                t=Waypoint.STOP))
 
         return locations
 
