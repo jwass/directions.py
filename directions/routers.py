@@ -23,6 +23,7 @@ from base import Router, Route, Maneuver, Waypoint
 
 class Google(Router):
     url = 'http://maps.googleapis.com/maps/api/directions/json'
+    default_name = 'google'
 
     def __init__(self, *args, **kwargs):
         Router.__init__(self, *args, **kwargs)
@@ -103,6 +104,7 @@ class Google(Router):
 class Mapquest(Router):
     # http://www.mapquestapi.com/directions/
     url = 'http://www.mapquestapi.com/directions/v2/route'
+    default_name = 'mapquest'
 
     def __init__(self, key, *args, **kwargs):
         Router.__init__(self, *args, **kwargs)
@@ -183,9 +185,12 @@ class MapquestOpen(Mapquest):
     # This is the same interface as Mapquest (for now) but just hits
     # a different url
     url = 'http://open.mapquestapi.com/directions/v2/route'
+    default_name = 'mapquestopen'
 
 
 class Mapbox(Router):
+    default_name = 'mapbox'
+
     # https://www.mapbox.com/developers/api/directions/
     def __init__(self, mapid, *args, **kwargs):
         Router.__init__(self, *args, **kwargs)

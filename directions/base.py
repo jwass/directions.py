@@ -5,7 +5,11 @@ class Waypoint:
     STOP = 2
 
 class Router:
-    def __init__(self, rate_limit_dt=0):
+    def __init__(self, name=None, rate_limit_dt=0):
+        # Just a simple identifier
+        if name is None:
+            self.name = self.default_name
+
         # The min time delta in seconds between queries
         self._rate_limit_dt = rate_limit_dt
 
