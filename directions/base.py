@@ -181,8 +181,33 @@ class Route:
         else:
             features = [self]
 
+        properties = self.properties.copy()
+        properties.update({'distance': self.distance,
+                           'duration': self.duration})
+
         return {'type': 'FeatureCollection',
+                'properties': properties,
                 'features': [f.__geo_interface__ for f in features]}
+
+    @classmethod
+    def from_geojson(cls, data):
+        """
+        Return a Route from a GeoJSON dictionary, as returned by Route.geojson()
+
+        """
+        properties = data['properties']
+        distance = properties.pop('distance')
+        duration = properties.pop('duration')
+
+        maneuvers = []
+        for feature in data['features']:
+            geom = feature['geometry']
+            if geom['type'] == 'LineString':
+                coords = geom['coordinates']
+            else:
+                maneuvers.append(Maneuver.from_geojson(feature))
+
+        return Route(coords, distance, duration, maneuvers, **properties)
 
 
 class Maneuver:
@@ -206,3 +231,12 @@ class Maneuver:
              'properties': self.properties}
 
         return f
+
+    @classmethod
+    def from_geojson(cls, data):
+        """
+        Return a Maneuver from a GeoJSON dictionary
+
+        """
+        coords = data['geometry']['coordinates']
+        return Maneuver(coords, **data['properties'])

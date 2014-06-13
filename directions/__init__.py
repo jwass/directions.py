@@ -4,3 +4,7 @@ from routers import (
     MapquestOpen,
     Mapbox,
 )
+from base import (
+    Route,
+    Maneuver,
+)
