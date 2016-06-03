@@ -122,7 +122,7 @@ def _waypoints(waypoints):
 
     points = []
     for wp in waypoints:
-        if isinstance(wp, basestring):
+        if isinstance(wp, str):
             p = wp
         elif hasattr(wp, 'coords'):
             coords = wp.coords

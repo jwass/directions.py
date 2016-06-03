@@ -18,7 +18,7 @@ import json
 import polycomp
 import requests
 
-from base import Router, Route, Maneuver, Waypoint
+from .base import Router, Route, Maneuver, Waypoint
 
 
 class Google(Router):
@@ -30,7 +30,7 @@ class Google(Router):
 
     # https://developers.google.com/maps/documentation/directions/
     def _convert_coordinate(self, p, t=Waypoint.VIA):
-        if isinstance(p, basestring):
+        if isinstance(p, str):
             return p
         if t == Waypoint.VIA:
             via = 'via:'
@@ -82,8 +82,9 @@ class Google(Router):
                     m = Maneuver((loc['lng'], loc['lat']),
                                  text=step['html_instructions'])
                     maneuvers.append(m)
+                    d = step['polyline']['points'].encode('utf-8')
                     latlons.append(
-                        polycomp.decompress(step['polyline']['points']))
+                        polycomp.decompress(d))
 
             # latlons is a list of list of lat/lon coordinate pairs. The end
             # point of each list is the same as the first point of the next
@@ -115,7 +116,7 @@ class Mapquest(Router):
             via = 'v'
         else:
             via = 's'
-        if isinstance(location, basestring):
+        if isinstance(location, str):
             return {'street': location, 'type': via}
         else:
             return {'latLng': {'lat': location[1], 'lng': location[0]},
